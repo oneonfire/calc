@@ -5,18 +5,18 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <style>
-        /* CSS-змінні для теми. Значення за замовчуванням (fallback) - світла тема. 
-           JavaScript перевизначить ці змінні з кольорами Telegram. */
+        /* CSS-змінні для теми. Встановлюються JavaScript'ом. */
         :root {
+            /* Fallback-кольори для світлої теми, якщо SDK недоступний */
             --tg-bg-color: #f4f4f4;
             --tg-text-color: #000000;
             --tg-hint-color: #999999;
-            --tg-button-color: #007aff; /* Синій для акценту */
+            --tg-button-color: #007aff;
             --tg-button-text-color: #ffffff;
-            --tg-secondary-bg-color: #ffffff; /* Для контейнера калькулятора/історії */
+            --tg-secondary-bg-color: #ffffff; 
         }
 
-        /* Стилі калькулятора використовують CSS-змінні Telegram */
+        /* ОСНОВНІ СТИЛІ */
         body {
             font-family: Arial, sans-serif;
             display: flex;
@@ -25,18 +25,29 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background-color: var(--tg-bg-color); /* Фон береться з Telegram */
+            background-color: var(--tg-bg-color); 
             color: var(--tg-text-color);
+            transition: background-color 0.3s; /* Плавний перехід теми */
         }
+        
         .calculator, #history-container {
-            border: 1px solid var(--tg-hint-color); /* Легка рамка */
+            /* Використовуємо secondary_bg_color для "внутрішніх" контейнерів */
+            background-color: var(--tg-secondary-bg-color); 
+            border: 1px solid var(--tg-hint-color); 
             border-radius: 5px;
             padding: 20px;
-            background-color: var(--tg-secondary-bg-color); /* Фон калькулятора/історії */
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             width: 300px;
             box-sizing: border-box;
+            transition: background-color 0.3s, border-color 0.3s;
         }
+
+        /* Гарантуємо, що текст успадковує колір теми */
+        .calculator *, #history-container * {
+            color: inherit; 
+        }
+
+        /* СТИЛІ ДИСПЛЕЯ */
         #display {
             width: 100%;
             height: 50px;
@@ -50,6 +61,8 @@
             background-color: var(--tg-secondary-bg-color);
             color: var(--tg-text-color);
         }
+
+        /* СТИЛІ КНОПОК */
         .buttons {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -61,18 +74,15 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            background-color: var(--tg-bg-color); /* Світліший колір кнопки */
+            background-color: var(--tg-bg-color); 
             color: var(--tg-text-color);
+            transition: background-color 0.3s;
         }
-        .btn:hover {
-            opacity: 0.8;
+        .btn:active {
+            opacity: 0.7;
         }
-        .operator {
+        .operator, .equals {
             background-color: var(--tg-button-color); /* Колір акценту */
-            color: var(--tg-button-text-color);
-        }
-        .equals {
-            background-color: var(--tg-button-color);
             color: var(--tg-button-text-color);
         }
         .clear {
@@ -80,7 +90,7 @@
             color: var(--tg-button-text-color);
         }
         
-        /* Стилі для історії */
+        /* СТИЛІ ІСТОРІЇ */
         #history-container {
             margin-top: 20px;
             max-height: 200px; 
@@ -100,7 +110,7 @@
             border-bottom: none;
         }
         #history-list li:hover {
-            background-color: rgba(var(--tg-text-color-rgb, 0,0,0), 0.1);
+            background-color: rgba(var(--tg-text-color-rgb, 0,0,0), 0.1); 
         }
         .history-expression {
             color: var(--tg-hint-color);
@@ -109,6 +119,15 @@
         .history-result {
             font-weight: bold;
             color: var(--tg-text-color);
+        }
+        #history-container h4 button {
+            float: right; 
+            border: none; 
+            background: transparent; 
+            color: var(--tg-button-color) !important; 
+            cursor: pointer;
+            font-size: 1em;
+            padding: 0;
         }
     </style>
 </head>
@@ -145,7 +164,7 @@
 </div>
 
 <div id="history-container">
-    <h4>Остання історія (до 10 записів): <button style="float: right; border: none; background: transparent; color: var(--tg-button-color); cursor: pointer;" onclick="clearHistory()">Очистити</button></h4>
+    <h4>Остання історія (до 10 записів): <button onclick="clearHistory()">Очистити</button></h4>
     <ul id="history-list">
         </ul>
 </div>
@@ -158,29 +177,51 @@
     let isNewOperation = true;
 
     // ---------------------------------------------
-    // TELEGRAM THEME INTEGRATION (NEW)
+    // TELEGRAM THEME INTEGRATION
     // ---------------------------------------------
     function applyTelegramTheme() {
-        if (window.Telegram && window.Telegram.WebApp) {
-            const tg = window.Telegram.WebApp;
-            const theme = tg.themeParams;
-            const root = document.documentElement; // Застосовуємо до root (або body)
-            
-            // Застосовуємо всі кольори, надані Telegram, як CSS-змінні
-            for (const key in theme) {
-                if (theme.hasOwnProperty(key)) {
-                    // key: bg_color -> --tg-bg-color
-                    const cssVarName = '--tg-' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
-                    root.style.setProperty(cssVarName, theme[key]);
+        const tg = window.Telegram.WebApp;
+        const theme = tg.themeParams;
+        const root = document.documentElement;
+        
+        // 1. Застосовуємо всі кольори Telegram як CSS-змінні
+        for (const key in theme) {
+            if (theme.hasOwnProperty(key)) {
+                const cssVarName = '--tg-' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                root.style.setProperty(cssVarName, theme[key]);
+
+                // Додатково: Застосовуємо RGB-версію для hover-ефектів (якщо потрібно)
+                if (key.endsWith('_color')) {
+                    const color = theme[key];
+                    const rgb = hexToRgb(color);
+                    if (rgb) {
+                         root.style.setProperty(cssVarName + '-rgb', `${rgb.r},${rgb.g},${rgb.b}`);
+                    }
                 }
             }
-            
-            // Додатково: Підписка на зміну теми (якщо користувач переключить світлу/темну)
-            tg.onEvent('themeChanged', applyTelegramTheme);
-
-            // Виклик методу для розширення Mini App на повну висоту
-            tg.expand();
         }
+        
+        // 2. Встановлюємо secondary_bg_color, який часто є основним фоном контейнерів
+        root.style.setProperty('--tg-secondary-bg-color', theme.secondary_bg_color || theme.bg_color);
+        
+        // 3. Підписка на зміну теми
+        tg.onEvent('themeChanged', applyTelegramTheme);
+
+        // 4. Розширення Mini App
+        tg.expand();
+    }
+    
+    // Допоміжна функція для конвертації HEX в RGB
+    function hexToRgb(hex) {
+        if (!hex || hex.length < 7) return null;
+        const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+        hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? {
+            r: parseInt(result[1], 16),
+            g: parseInt(result[2], 16),
+            b: parseInt(result[3], 16)
+        } : null;
     }
 
 
@@ -235,7 +276,6 @@
         if (!historyList) return; 
 
         historyList.innerHTML = ''; 
-
         const reversedHistory = [...history].reverse();
 
         reversedHistory.forEach(entry => {
@@ -261,7 +301,7 @@
     }
 
     // ---------------------------------------------
-    // CALCULATOR CORE LOGIC (UNCHANGED)
+    // CALCULATOR CORE LOGIC
     // ---------------------------------------------
 
     function appendToDisplay(value) {
@@ -310,12 +350,20 @@
     }
 
     // ---------------------------------------------
-    // INITIALIZATION
+    // INITIALIZATION (Викликається надійно)
     // ---------------------------------------------
 
-    // 🚩 Запускаємо інтеграцію теми та завантаження даних
-    applyTelegramTheme();
-    loadHistory(); 
+    function initApp() {
+        if (window.Telegram && window.Telegram.WebApp) {
+            applyTelegramTheme(); 
+            loadHistory(); 
+        } else {
+            // Якщо SDK не готовий, спробуємо ініціалізувати через короткий час
+            setTimeout(initApp, 100); 
+        }
+    }
+
+    initApp(); 
 </script>
 
 </body>
