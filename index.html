@@ -1,24 +1,22 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>MD3 Telegram Calculator</title>
+    <title>Calculator</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <style>
-        /* CSS-ЗМІННІ ДЛЯ MD3 ТА TELEGRAM */
+        /* CSS-ЗМІННІ ТА СТИЛІ БЕЗ ЗМІН */
         :root {
-            /* Fallback (за замовчуванням - світла тема) */
             --tg-bg-color: #f4f4f4;
-            --tg-text-color: #1c1b1f; /* MD3 Primary Text */
+            --tg-text-color: #000000;
             --tg-hint-color: #999999;
-            --tg-button-color: #6750a4; /* MD3 Primary/Accent */
+            --tg-button-color: #6750a4;
             --tg-button-text-color: #ffffff;
-            --tg-secondary-bg-color: #ffffff; 
-            --md3-surface-container-high: #f0eaf4; /* Світліший контейнер MD3 */
-            --md3-surface-container-low: #ffffff;  /* Темніший контейнер MD3 */
+            --tg-secondary-bg-color: #ffffff;
+            --md3-surface-container-high: #f0eaf4;
+            --md3-surface-container-low: #ffffff;
         }
         
-        /* Глобальне скидання та адаптація теми */
         body {
             font-family: 'Roboto', sans-serif;
             display: flex;
@@ -31,10 +29,9 @@
             transition: background-color 0.3s;
         }
 
-        /* КОНТЕЙНЕР КАЛЬКУЛЯТОРА */
         .calculator {
             margin-top: 20px;
-            border-radius: 28px; /* MD3 велике заокруглення */
+            border-radius: 28px;
             padding: 16px;
             background-color: var(--tg-secondary-bg-color); 
             box-shadow: 0 4px 10px rgba(0,0,0,0.2);
@@ -43,7 +40,6 @@
             transition: background-color 0.3s;
         }
 
-        /* ДИСПЛЕЙ (TextField MD3) */
         #display {
             width: 100%;
             height: 64px;
@@ -53,7 +49,7 @@
             padding: 8px 12px;
             box-sizing: border-box;
             border: none;
-            border-bottom: 2px solid var(--tg-hint-color); /* Underline style */
+            border-bottom: 2px solid var(--tg-hint-color);
             border-radius: 8px 8px 0 0;
             background-color: var(--tg-secondary-bg-color);
             color: var(--tg-text-color);
@@ -64,46 +60,41 @@
             border-bottom: 2px solid var(--tg-button-color);
         }
 
-        /* СІТКА КНОПОК */
         .buttons {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 12px; /* Простір між кнопками MD3 */
+            gap: 12px;
         }
 
-        /* СТИЛІ КНОПОК */
         .btn {
             padding: 18px;
             font-size: 1.2em;
             border: none;
-            border-radius: 16px; /* Середнє заокруглення MD3 */
+            border-radius: 16px;
             cursor: pointer;
             transition: background-color 0.15s, transform 0.05s, color 0.15s;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         .btn:active {
-            transform: scale(0.98); /* Ефект натискання */
+            transform: scale(0.98);
         }
 
-        /* Кнопки з числами та '.' */
         .btn:not(.operator):not(.equals):not(.clear) {
-            background-color: var(--md3-surface-container-high, #f0eaf4); /* Світліший фон */
+            background-color: var(--md3-surface-container-high, #f0eaf4);
             color: var(--tg-text-color);
         }
         .btn:not(.operator):not(.equals):not(.clear):hover {
              background-color: color-mix(in srgb, var(--md3-surface-container-high, #f0eaf4) 85%, var(--tg-text-color));
         }
 
-        /* Кнопки-оператори та "=" */
         .operator, .equals {
-            background-color: var(--tg-button-color); /* Primary/Accent color */
+            background-color: var(--tg-button-color);
             color: var(--tg-button-text-color);
         }
         .operator:hover, .equals:hover {
              background-color: color-mix(in srgb, var(--tg-button-color) 85%, var(--tg-text-color));
         }
         
-        /* Кнопка очищення (C, Backspace) */
         .clear {
             background-color: var(--tg-hint-color); 
             color: var(--tg-button-text-color);
@@ -112,13 +103,12 @@
             background-color: color-mix(in srgb, var(--tg-hint-color) 85%, var(--tg-text-color));
         }
 
-        /* СТИЛІ ІСТОРІЇ */
         #history-container {
             margin-top: 20px;
             width: 320px;
             max-height: 200px; 
             overflow-y: auto; 
-            background-color: var(--md3-surface-container-low, #ffffff); /* Інший відтінок контейнера */
+            background-color: var(--md3-surface-container-low, #ffffff);
             border-radius: 16px; 
             padding: 16px;
             box-sizing: border-box;
@@ -214,7 +204,7 @@
     let isNewOperation = true;
 
     // ---------------------------------------------
-    // TELEGRAM THEME INTEGRATION
+    // TELEGRAM THEME INTEGRATION (БЕЗ ЗМІН)
     // ---------------------------------------------
     function hexToRgb(hex) {
         if (!hex || hex.length < 7) return null;
@@ -231,7 +221,6 @@
         const theme = tg.themeParams;
         const root = document.documentElement;
         
-        // 1. Застосовуємо всі кольори Telegram як CSS-змінні
         for (const key in theme) {
             if (theme.hasOwnProperty(key)) {
                 const cssVarName = '--tg-' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
@@ -246,25 +235,21 @@
             }
         }
         
-        // 2. Встановлюємо MD3-сумісні змінні для темного/світлого режиму
         const isDark = tg.colorScheme === 'dark';
         if (isDark) {
-            // Dark Mode colors
             root.style.setProperty('--md3-surface-container-high', theme.secondary_bg_color || '#36343b');
             root.style.setProperty('--md3-surface-container-low', theme.bg_color || '#1c1b1f');
         } else {
-             // Light Mode colors
              root.style.setProperty('--md3-surface-container-high', '#f0eaf4');
              root.style.setProperty('--md3-surface-container-low', theme.secondary_bg_color || '#ffffff');
         }
         
-        // 3. Додаткові дії
         tg.onEvent('themeChanged', applyTelegramTheme);
         tg.expand();
     }
     
     // ---------------------------------------------
-    // LOCAL STORAGE & HISTORY DISPLAY
+    // LOCAL STORAGE & HISTORY DISPLAY (НОВИЙ ФУНКЦІОНАЛ)
     // ---------------------------------------------
 
     function loadHistory() {
@@ -272,12 +257,14 @@
         if (savedHistory) {
             try {
                 history = JSON.parse(savedHistory);
+                // Відновлюємо останній результат на дисплеї
                 if (history.length > 0) {
                     display.value = history[history.length - 1].result;
                     isNewOperation = true; 
                 }
                 updateHistoryDisplay(); 
             } catch (e) {
+                console.error("Помилка завантаження історії:", e);
                 history = [];
                 clearDisplay();
             }
@@ -293,6 +280,7 @@
             timestamp: new Date().toLocaleTimeString('uk-UA') 
         });
         
+        // Обмеження розміру історії
         if (history.length > MAX_HISTORY_SIZE) {
             history = history.slice(history.length - MAX_HISTORY_SIZE);
         }
@@ -319,11 +307,13 @@
         reversedHistory.forEach(entry => {
             const listItem = document.createElement('li');
             
+            // Можливість клікнути на запис для відновлення
             listItem.onclick = () => {
                 display.value = entry.result;
                 isNewOperation = true;
             };
 
+            // HTML генерується, використовуючи класи та змінні, що мають бути в CSS
             listItem.innerHTML = `
                 <span class="history-expression">${entry.expression} =</span>
                 <span class="history-result">${entry.result}</span>
@@ -338,8 +328,9 @@
         }
     }
 
+
     // ---------------------------------------------
-    // CALCULATOR CORE LOGIC
+    // CALCULATOR CORE LOGIC (МОДИФІКАЦІЯ ДЛЯ ЗБЕРЕЖЕННЯ)
     // ---------------------------------------------
 
     function appendToDisplay(value) {
@@ -377,6 +368,7 @@
             if (result === undefined || result === null || isNaN(result) || !isFinite(result)) {
                 display.value = 'Error';
             } else {
+                // ВИКЛИК ЗБЕРЕЖЕННЯ ІСТОРІЇ
                 saveHistory(expressionToEvaluate.replace('*', '×').replace('/', '÷'), result); 
                 
                 display.value = result;
@@ -394,9 +386,8 @@
     function initApp() {
         if (window.Telegram && window.Telegram.WebApp) {
             applyTelegramTheme(); 
-            loadHistory(); 
+            loadHistory(); // ЗАВАНТАЖУЄМО ІСТОРІЮ
         } else {
-            // Резервний варіант ініціалізації
             setTimeout(initApp, 100); 
         }
     }
