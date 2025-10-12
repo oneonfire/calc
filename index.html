@@ -1,27 +1,28 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Calculator</title>
+    <title>MD3 Telegram Calculator</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <style>
-        /* CSS-змінні для теми. Встановлюються JavaScript'ом. */
+        /* CSS-ЗМІННІ ДЛЯ MD3 ТА TELEGRAM */
         :root {
-            /* Fallback-кольори для світлої теми, якщо SDK недоступний */
+            /* Fallback (за замовчуванням - світла тема) */
             --tg-bg-color: #f4f4f4;
-            --tg-text-color: #000000;
+            --tg-text-color: #1c1b1f; /* MD3 Primary Text */
             --tg-hint-color: #999999;
-            --tg-button-color: #007aff;
+            --tg-button-color: #6750a4; /* MD3 Primary/Accent */
             --tg-button-text-color: #ffffff;
             --tg-secondary-bg-color: #ffffff; 
+            --md3-surface-container-high: #f0eaf4; /* Світліший контейнер MD3 */
+            --md3-surface-container-low: #ffffff;  /* Темніший контейнер MD3 */
         }
-
-        /* ОСНОВНІ СТИЛІ */
+        
+        /* Глобальне скидання та адаптація теми */
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Roboto', sans-serif;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
@@ -29,79 +30,105 @@
             color: var(--tg-text-color);
             transition: background-color 0.3s;
         }
-        
-        .calculator, #history-container {
-            /* secondary_bg_color - темно-сірий у темній темі. Це фон контейнерів. */
+
+        /* КОНТЕЙНЕР КАЛЬКУЛЯТОРА */
+        .calculator {
+            margin-top: 20px;
+            border-radius: 28px; /* MD3 велике заокруглення */
+            padding: 16px;
             background-color: var(--tg-secondary-bg-color); 
-            border: 1px solid var(--tg-hint-color); 
-            border-radius: 5px;
-            padding: 20px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            width: 300px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            width: 320px;
             box-sizing: border-box;
-            transition: background-color 0.3s, border-color 0.3s;
+            transition: background-color 0.3s;
         }
 
-        /* Гарантуємо, що текст успадковує колір теми */
-        .calculator *, #history-container * {
-            color: inherit; 
-        }
-
-        /* СТИЛІ ДИСПЛЕЯ */
+        /* ДИСПЛЕЙ (TextField MD3) */
         #display {
             width: 100%;
-            height: 50px;
-            font-size: 2em;
+            height: 64px;
+            font-size: 2.5em;
             text-align: right;
-            margin-bottom: 10px;
-            padding: 5px;
+            margin-bottom: 16px;
+            padding: 8px 12px;
             box-sizing: border-box;
-            border: 1px solid var(--tg-hint-color);
-            border-radius: 3px;
+            border: none;
+            border-bottom: 2px solid var(--tg-hint-color); /* Underline style */
+            border-radius: 8px 8px 0 0;
             background-color: var(--tg-secondary-bg-color);
             color: var(--tg-text-color);
+            outline: none;
+            transition: all 0.3s;
+        }
+        #display:focus {
+            border-bottom: 2px solid var(--tg-button-color);
         }
 
-        /* СТИЛІ КНОПОК */
+        /* СІТКА КНОПОК */
         .buttons {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
+            gap: 12px; /* Простір між кнопками MD3 */
         }
+
+        /* СТИЛІ КНОПОК */
         .btn {
-            padding: 15px;
+            padding: 18px;
             font-size: 1.2em;
             border: none;
-            border-radius: 5px;
+            border-radius: 16px; /* Середнє заокруглення MD3 */
             cursor: pointer;
-            transition: background-color 0.3s;
+            transition: background-color 0.15s, transform 0.05s, color 0.15s;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         .btn:active {
-            opacity: 0.7;
+            transform: scale(0.98); /* Ефект натискання */
         }
-        
-        /* Звичайні кнопки (1,2,3,4...) використовують bg_color (для контрасту) */
+
+        /* Кнопки з числами та '.' */
         .btn:not(.operator):not(.equals):not(.clear) {
-            background-color: var(--tg-bg-color); 
+            background-color: var(--md3-surface-container-high, #f0eaf4); /* Світліший фон */
             color: var(--tg-text-color);
         }
-        
-        /* Оператори та "=" використовують колір акценту */
+        .btn:not(.operator):not(.equals):not(.clear):hover {
+             background-color: color-mix(in srgb, var(--md3-surface-container-high, #f0eaf4) 85%, var(--tg-text-color));
+        }
+
+        /* Кнопки-оператори та "=" */
         .operator, .equals {
-            background-color: var(--tg-button-color); 
+            background-color: var(--tg-button-color); /* Primary/Accent color */
             color: var(--tg-button-text-color);
         }
-        /* Кнопка очищення (C) використовує колір підказки */
+        .operator:hover, .equals:hover {
+             background-color: color-mix(in srgb, var(--tg-button-color) 85%, var(--tg-text-color));
+        }
+        
+        /* Кнопка очищення (C, Backspace) */
         .clear {
             background-color: var(--tg-hint-color); 
             color: var(--tg-button-text-color);
         }
-        
+        .clear:hover {
+            background-color: color-mix(in srgb, var(--tg-hint-color) 85%, var(--tg-text-color));
+        }
+
         /* СТИЛІ ІСТОРІЇ */
         #history-container {
             margin-top: 20px;
+            width: 320px;
             max-height: 200px; 
             overflow-y: auto; 
+            background-color: var(--md3-surface-container-low, #ffffff); /* Інший відтінок контейнера */
+            border-radius: 16px; 
+            padding: 16px;
+            box-sizing: border-box;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+        }
+        #history-container h4 {
+            color: var(--tg-text-color);
+            margin-top: 0;
+            margin-bottom: 10px;
+            font-weight: 500;
         }
         #history-list {
             list-style: none;
@@ -109,24 +136,25 @@
             margin: 0;
         }
         #history-list li {
-            padding: 5px 0;
-            border-bottom: 1px dotted var(--tg-hint-color); 
+            padding: 8px 0;
             cursor: pointer; 
+            border-bottom: 1px dashed rgba(var(--tg-text-color-rgb, 0,0,0), 0.1);
         }
         #history-list li:last-child {
             border-bottom: none;
         }
         #history-list li:hover {
-            /* hover-ефект, який працює з будь-яким кольором теми */
-            background-color: rgba(var(--tg-text-color-rgb, 0,0,0), 0.1); 
+            background-color: rgba(var(--tg-text-color-rgb, 0,0,0), 0.05);
+            border-radius: 8px;
         }
         .history-expression {
             color: var(--tg-hint-color);
-            font-size: 0.9em;
+            font-size: 0.85em;
         }
         .history-result {
-            font-weight: bold;
+            font-weight: 600;
             color: var(--tg-text-color);
+            margin-left: 10px;
         }
         #history-container h4 button {
             float: right; 
@@ -134,8 +162,9 @@
             background: transparent; 
             color: var(--tg-button-color) !important; 
             cursor: pointer;
-            font-size: 1em;
+            font-size: 0.9em;
             padding: 0;
+            font-weight: 500;
         }
     </style>
 </head>
@@ -147,7 +176,7 @@
         <button class="btn clear" onclick="clearDisplay()">C</button>
         <button class="btn operator" onclick="appendToDisplay('÷')">÷</button>
         <button class="btn operator" onclick="appendToDisplay('×')">×</button>
-        <button class="btn operator" onclick="appendToDisplay('←')">←</button>
+        <button class="btn clear" onclick="appendToDisplay('←')">←</button>
 
         <button class="btn" onclick="appendToDisplay('7')">7</button>
         <button class="btn" onclick="appendToDisplay('8')">8</button>
@@ -166,8 +195,8 @@
 
         <button class="btn" onclick="appendToDisplay('0')">0</button>
         <button class="btn" onclick="appendToDisplay('.')">.</button>
-        <button class="btn operator" onclick="appendToDisplay('(')">(</button>
-        <button class="btn operator" onclick="appendToDisplay(')')">)</button>
+        <button class="btn" onclick="appendToDisplay('(')">(</button>
+        <button class="btn" onclick="appendToDisplay(')')">)</button>
     </div>
 </div>
 
@@ -185,8 +214,16 @@
     let isNewOperation = true;
 
     // ---------------------------------------------
-    // TELEGRAM THEME INTEGRATION
+    // TELEGRAM THEME INTEGRATION (MD3 COLORS)
     // ---------------------------------------------
+    function hexToRgb(hex) {
+        if (!hex || hex.length < 7) return null;
+        const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+        hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+        return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
+    }
+
     function applyTelegramTheme() {
         const tg = window.Telegram.WebApp;
         const theme = tg.themeParams;
@@ -198,10 +235,8 @@
                 const cssVarName = '--tg-' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
                 root.style.setProperty(cssVarName, theme[key]);
 
-                // Додатково: Застосовуємо RGB-версію для hover-ефектів (якщо потрібно)
                 if (key.endsWith('_color')) {
-                    const color = theme[key];
-                    const rgb = hexToRgb(color);
+                    const rgb = hexToRgb(theme[key]);
                     if (rgb) {
                          root.style.setProperty(cssVarName + '-rgb', `${rgb.r},${rgb.g},${rgb.b}`);
                     }
@@ -209,30 +244,21 @@
             }
         }
         
-        // 2. Встановлюємо secondary_bg_color, який часто є основним фоном контейнерів
-        root.style.setProperty('--tg-secondary-bg-color', theme.secondary_bg_color || theme.bg_color);
-        
+        // 2. Встановлюємо MD3-сумісні змінні для темного/світлого режиму
+        const isDark = tg.colorScheme === 'dark';
+        if (isDark) {
+            root.style.setProperty('--md3-surface-container-high', theme.secondary_bg_color || '#36343b');
+            root.style.setProperty('--md3-surface-container-low', theme.bg_color || '#1c1b1f');
+        } else {
+             root.style.setProperty('--md3-surface-container-high', '#f0eaf4');
+             root.style.setProperty('--md3-surface-container-low', theme.secondary_bg_color || '#ffffff');
+        }
+
         // 3. Підписка на зміну теми
         tg.onEvent('themeChanged', applyTelegramTheme);
-
-        // 4. Розширення Mini App
         tg.expand();
     }
     
-    // Допоміжна функція для конвертації HEX в RGB
-    function hexToRgb(hex) {
-        if (!hex || hex.length < 7) return null;
-        const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-        hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? {
-            r: parseInt(result[1], 16),
-            g: parseInt(result[2], 16),
-            b: parseInt(result[3], 16)
-        } : null;
-    }
-
-
     // ---------------------------------------------
     // LOCAL STORAGE & HISTORY DISPLAY
     // ---------------------------------------------
@@ -358,7 +384,7 @@
     }
 
     // ---------------------------------------------
-    // INITIALIZATION (Викликається надійно)
+    // INITIALIZATION
     // ---------------------------------------------
 
     function initApp() {
@@ -370,6 +396,7 @@
         }
     }
 
+    const MAX_HISTORY_SIZE = 10; 
     initApp(); 
 </script>
 
