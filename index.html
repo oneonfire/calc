@@ -1,399 +1,355 @@
 <!DOCTYPE html>
-<html>
+<html lang="uk">
 <head>
-    <title>Calculator</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MD3 Науковий Калькулятор</title>
+    <!-- Підключення Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-
     <style>
-        /* CSS-ЗМІННІ ТА СТИЛІ БЕЗ ЗМІН */
-        :root {
-            --tg-bg-color: #f4f4f4;
-            --tg-text-color: #000000;
-            --tg-hint-color: #999999;
-            --tg-button-color: #6750a4;
-            --tg-button-text-color: #ffffff;
-            --tg-secondary-bg-color: #ffffff;
-            --md3-surface-container-high: #f0eaf4;
-            --md3-surface-container-low: #ffffff;
-        }
-        
+        /* MD3 Style Reset and Base */
         body {
-            font-family: 'Roboto', sans-serif;
+            font-family: 'Inter', Arial, sans-serif;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
             min-height: 100vh;
+            padding: 10px;
             margin: 0;
-            background-color: var(--tg-bg-color); 
-            color: var(--tg-text-color);
             transition: background-color 0.3s;
+            /* Стиль фону (градієнт) */
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            background-attachment: fixed;
         }
 
-        .calculator {
-            margin-top: 20px;
+        /* MD3 Container: Larger rounding, soft elevation */
+        .calculator-container {
+            width: 95%;
+            max-width: 420px;
+            padding: 16px; /* Внутрішній відступ для кнопок */
             border-radius: 28px;
-            padding: 16px;
-            background-color: var(--tg-secondary-bg-color); 
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            width: 320px;
-            box-sizing: border-box;
-            transition: background-color 0.3s;
+            transition: background-color 0.3s, box-shadow 0.3s;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background-color: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        /* ОНОВЛЕННЯ: Дисплей на всю ширину */
+        #display-container {
+            display: flex;
+            flex-direction: column;
+            width: auto;
+            /* Використовуємо негативні відступи, щоб розтягнути контейнер дисплею
+               на ширину основного контейнера, компенсуючи його padding (16px) */
+            margin: -16px -16px 12px -16px;
+            padding: 16px 20px; /* Внутрішній відступ для тексту/режиму */
+            /* Заокруглення лише зверху, щоб злитися з контейнером */
+            border-radius: 28px 28px 0 0;
+            background-color: var(--tg-theme-secondary-bg-color, #f4f4f4);
+            box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
         }
 
         #display {
             width: 100%;
-            height: 64px;
-            font-size: 2.5em;
+            height: 80px; /* Збільшена висота */
+            font-size: 3.5em; /* Збільшений розмір шрифту */
             text-align: right;
-            margin-bottom: 16px;
-            padding: 8px 12px;
-            box-sizing: border-box;
             border: none;
-            border-bottom: 2px solid var(--tg-hint-color);
-            border-radius: 8px 8px 0 0;
-            background-color: var(--tg-secondary-bg-color);
-            color: var(--tg-text-color);
+            background: none;
+            color: var(--tg-theme-text-color, #000);
             outline: none;
-            transition: all 0.3s;
+            padding: 0;
+            margin-top: 5px;
         }
-        #display:focus {
-            border-bottom: 2px solid var(--tg-button-color);
+
+        #angle-mode {
+            text-align: right;
+            font-size: 0.9em;
+            color: var(--tg-theme-hint-color, #999);
+            cursor: pointer;
+            user-select: none;
+            margin-bottom: -5px;
         }
 
         .buttons {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 12px;
+            /* 5 колонок для наукового режиму */
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
         }
 
-        .btn {
-            padding: 18px;
-            font-size: 1.2em;
+        button {
+            padding: 15px 5px;
+            font-size: 1.1em;
             border: none;
-            border-radius: 16px;
+            border-radius: 16px; /* MD3 button shape */
             cursor: pointer;
-            transition: background-color 0.15s, transform 0.05s, color 0.15s;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: background-color 0.2s, transform 0.1s;
+            user-select: none;
+            min-height: 50px;
         }
-        .btn:active {
+
+        button:active {
             transform: scale(0.98);
         }
 
-        .btn:not(.operator):not(.equals):not(.clear) {
-            background-color: var(--md3-surface-container-high, #f0eaf4);
-            color: var(--tg-text-color);
-        }
-        .btn:not(.operator):not(.equals):not(.clear):hover {
-             background-color: color-mix(in srgb, var(--md3-surface-container-high, #f0eaf4) 85%, var(--tg-text-color));
-        }
-
-        .operator, .equals {
-            background-color: var(--tg-button-color);
-            color: var(--tg-button-text-color);
-        }
-        .operator:hover, .equals:hover {
-             background-color: color-mix(in srgb, var(--tg-button-color) 85%, var(--tg-text-color));
-        }
-        
-        .clear {
-            background-color: var(--tg-hint-color); 
-            color: var(--tg-button-text-color);
-        }
-        .clear:hover {
-            background-color: color-mix(in srgb, var(--tg-hint-color) 85%, var(--tg-text-color));
+        /* Стилі для різних типів кнопок */
+        /* Control/Clear buttons */
+        .control {
+            background-color: var(--tg-theme-hint-color, #ccc)30;
+            color: var(--tg-theme-text-color, #333);
         }
 
-        #history-container {
-            margin-top: 20px;
-            width: 320px;
-            max-height: 200px; 
-            overflow-y: auto; 
-            background-color: var(--md3-surface-container-low, #ffffff);
-            border-radius: 16px; 
-            padding: 16px;
-            box-sizing: border-box;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-        }
-        #history-container h4 {
-            color: var(--tg-text-color);
-            margin-top: 0;
-            margin-bottom: 10px;
+        /* Scientific functions */
+        .scientific {
+            background-color: var(--tg-theme-secondary-bg-color, #f4f4f4);
+            color: var(--tg-theme-button-color, #5195e4);
             font-weight: 500;
         }
-        #history-list {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-        #history-list li {
-            padding: 8px 0;
-            cursor: pointer; 
-            border-bottom: 1px dashed rgba(var(--tg-text-color-rgb, 0,0,0), 0.1);
-        }
-        #history-list li:last-child {
-            border-bottom: none;
-        }
-        #history-list li:hover {
-            background-color: rgba(var(--tg-text-color-rgb, 0,0,0), 0.05);
-            border-radius: 8px;
-        }
-        .history-expression {
-            color: var(--tg-hint-color);
-            font-size: 0.85em;
-        }
-        .history-result {
+
+        /* Numeric buttons */
+        .number {
+            background-color: var(--tg-theme-bg-color, #fff);
+            color: var(--tg-theme-text-color, #333);
             font-weight: 600;
-            color: var(--tg-text-color);
-            margin-left: 10px;
         }
-        #history-container h4 button {
-            float: right; 
-            border: none; 
-            background: transparent; 
-            color: var(--tg-button-color) !important; 
-            cursor: pointer;
-            font-size: 0.9em;
-            padding: 0;
-            font-weight: 500;
+
+        /* Operator buttons (Accent) */
+        .operator {
+            background-color: var(--tg-theme-button-color, #5195e4);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            font-weight: 600;
+        }
+
+        /* Equal button - використовуємо span 3 в HTML */
+        .equal {
+            /* grid-column: span 2; - Прибрано з CSS, використовується inline-стиль для span 3 */
+            background-color: var(--tg-theme-button-color, #5195e4);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            font-weight: 700;
+            font-size: 1.5em;
         }
     </style>
 </head>
 <body>
+    <div class="calculator-container">
 
-<div class="calculator">
-    <input type="text" id="display" disabled value="0">
-    <div class="buttons">
-        <button class="btn clear" onclick="clearDisplay()">C</button>
-        <button class="btn operator" onclick="appendToDisplay('÷')">÷</button>
-        <button class="btn operator" onclick="appendToDisplay('×')">×</button>
-        <button class="btn clear" onclick="appendToDisplay('←')">←</button>
+        <div id="display-container">
+            <div id="angle-mode" onclick="toggleAngleMode()">GRAD</div>
+            <input type="text" id="display" readonly value="0">
+        </div>
 
-        <button class="btn" onclick="appendToDisplay('7')">7</button>
-        <button class="btn" onclick="appendToDisplay('8')">8</button>
-        <button class="btn" onclick="appendToDisplay('9')">9</button>
-        <button class="btn operator" onclick="appendToDisplay('-')">-</button>
+        <div class="buttons">
+            <!-- Ряд 1: Тригонометрія та Контроль -->
+            <button class="scientific" onclick="appendFunction('sin(')">sin</button>
+            <button class="scientific" onclick="appendFunction('cos(')">cos</button>
+            <button class="scientific" onclick="appendFunction('tan(')">tan</button>
+            <button class="control" onclick="clearDisplay()">C</button>
+            <button class="control" onclick="deleteLast()">DEL</button>
 
-        <button class="btn" onclick="appendToDisplay('4')">4</button>
-        <button class="btn" onclick="appendToDisplay('5')">5</button>
-        <button class="btn" onclick="appendToDisplay('6')">6</button>
-        <button class="btn operator" onclick="appendToDisplay('+')">+</button>
+            <!-- Ряд 2: log, √ та Числа 7, 8, 9 -->
+            <button class="scientific" onclick="appendFunction('log(')">log</button>
+            <button class="scientific" onclick="appendFunction('sqrt(')">√</button>
+            <button class="number" onclick="appendValue('7')">7</button>
+            <button class="number" onclick="appendValue('8')">8</button>
+            <button class="number" onclick="appendValue('9')">9</button>
 
-        <button class="btn" onclick="appendToDisplay('1')">1</button>
-        <button class="btn" onclick="appendToDisplay('2')">2</button>
-        <button class="btn" onclick="appendToDisplay('3')">3</button>
-        <button class="btn equals" onclick="calculateResult()">=</button>
+            <!-- Ряд 3: x^y, π та Числа 4, 5, 6 -->
+            <button class="scientific" onclick="appendFunction('pow(')">x^y</button>
+            <button class="scientific" onclick="appendValue('Math.PI')">π</button>
+            <button class="number" onclick="appendValue('4')">4</button>
+            <button class="number" onclick="appendValue('5')">5</button>
+            <button class="number" onclick="appendValue('6')">6</button>
 
-        <button class="btn" onclick="appendToDisplay('0')">0</button>
-        <button class="btn" onclick="appendToDisplay('.')">.</button>
-        <button class="btn" onclick="appendToDisplay('(')">(</button>
-        <button class="btn" onclick="appendToDisplay(')')">)</button>
+            <!-- Ряд 4: Дужки та Числа 1, 2, 3 -->
+            <button class="scientific" onclick="appendValue('(')">(</button>
+            <button class="scientific" onclick="appendValue(')')">)</button>
+            <button class="number" onclick="appendValue('1')">1</button>
+            <button class="number" onclick="appendValue('2')">2</button>
+            <button class="number" onclick="appendValue('3')">3</button>
+
+            <!-- Ряд 5: Числа 0, . та Ділення/Множення -->
+            <button class="number" onclick="appendValue('0')" style="grid-column: span 2;">0</button>
+            <button class="number" onclick="appendValue('.')">.</button>
+            <button class="operator" onclick="appendValue('/')">÷</button>
+            <button class="operator" onclick="appendValue('*')">×</button>
+
+            <!-- Ряд 6: Віднімання/Додавання та Обчислення -->
+            <button class="operator" onclick="appendValue('-')">-</button>
+            <button class="operator" onclick="appendValue('+')">+</button>
+            <button class="equal" onclick="calculateResult()" style="grid-column: span 3;">=</button>
+        </div>
     </div>
-</div>
+    <script>
+        const display = document.getElementById('display');
+        const angleModeToggle = document.getElementById('angle-mode');
 
-<div id="history-container">
-    <h4>Остання історія (до 10 записів): <button onclick="clearHistory()">Очистити</button></h4>
-    <ul id="history-list">
-        </ul>
-</div>
+        let newEntry = true;
+        // Режим: true = GRADUS (Градуси), false = RAD (Радіани)
+        let isDegrees = true;
 
-
-<script>
-    const display = document.getElementById('display');
-    const MAX_HISTORY_SIZE = 10; 
-    let history = []; 
-    let isNewOperation = true;
-
-    // ---------------------------------------------
-    // TELEGRAM THEME INTEGRATION (БЕЗ ЗМІН)
-    // ---------------------------------------------
-    function hexToRgb(hex) {
-        if (!hex || hex.length < 7) return null;
-        const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
-        hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
-        const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-        return result ? { r: parseInt(result[1], 16), g: parseInt(result[2], 16), b: parseInt(result[3], 16) } : null;
-    }
-
-    function applyTelegramTheme() {
-        if (!window.Telegram || !window.Telegram.WebApp) return;
-
-        const tg = window.Telegram.WebApp;
-        const theme = tg.themeParams;
-        const root = document.documentElement;
-        
-        for (const key in theme) {
-            if (theme.hasOwnProperty(key)) {
-                const cssVarName = '--tg-' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
-                root.style.setProperty(cssVarName, theme[key]);
-
-                if (key.endsWith('_color')) {
-                    const rgb = hexToRgb(theme[key]);
-                    if (rgb) {
-                         root.style.setProperty(cssVarName + '-rgb', `${rgb.r},${rgb.g},${rgb.b}`);
-                    }
-                }
+        // Функція для перемикання режиму Градуси/Радіани
+        function toggleAngleMode() {
+            isDegrees = !isDegrees;
+            angleModeToggle.textContent = isDegrees ? 'GRAD' : 'RAD';
+            // Повідомляємо користувачу про зміну
+            if (window.Telegram.WebApp) {
+                window.Telegram.WebApp.showPopup({
+                    message: `Режим змінено на: ${isDegrees ? 'Градуси' : 'Радіани'}`
+                });
             }
         }
-        
-        const isDark = tg.colorScheme === 'dark';
-        if (isDark) {
-            root.style.setProperty('--md3-surface-container-high', theme.secondary_bg_color || '#36343b');
-            root.style.setProperty('--md3-surface-container-low', theme.bg_color || '#1c1b1f');
-        } else {
-             root.style.setProperty('--md3-surface-container-high', '#f0eaf4');
-             root.style.setProperty('--md3-surface-container-low', theme.secondary_bg_color || '#ffffff');
-        }
-        
-        tg.onEvent('themeChanged', applyTelegramTheme);
-        tg.expand();
-    }
-    
-    // ---------------------------------------------
-    // LOCAL STORAGE & HISTORY DISPLAY (НОВИЙ ФУНКЦІОНАЛ)
-    // ---------------------------------------------
 
-    function loadHistory() {
-        const savedHistory = localStorage.getItem('calc_history');
-        if (savedHistory) {
-            try {
-                history = JSON.parse(savedHistory);
-                // Відновлюємо останній результат на дисплеї
-                if (history.length > 0) {
-                    display.value = history[history.length - 1].result;
-                    isNewOperation = true; 
-                }
-                updateHistoryDisplay(); 
-            } catch (e) {
-                console.error("Помилка завантаження історії:", e);
-                history = [];
+        // Допоміжна функція: градуси в радіани
+        const degToRad = (degrees) => degrees * (Math.PI / 180);
+
+        function appendValue(value) {
+            if (display.value === '0' || newEntry) {
+                display.value = value;
+                newEntry = false;
+            } else {
+                display.value += value;
+            }
+        }
+
+        function appendFunction(func) {
+            if (display.value === '0' || newEntry) {
+                display.value = func;
+            } else {
+                display.value += func;
+            }
+            newEntry = false;
+        }
+
+        function clearDisplay() {
+            display.value = '0';
+            newEntry = true;
+        }
+
+        function deleteLast() {
+            if (display.value.length > 1) {
+                display.value = display.value.slice(0, -1);
+            } else {
                 clearDisplay();
             }
-        } else {
-            updateHistoryDisplay();
-        }
-    }
-
-    function saveHistory(expression, result) {
-        history.push({ 
-            expression: expression,
-            result: result.toString(),
-            timestamp: new Date().toLocaleTimeString('uk-UA') 
-        });
-        
-        // Обмеження розміру історії
-        if (history.length > MAX_HISTORY_SIZE) {
-            history = history.slice(history.length - MAX_HISTORY_SIZE);
-        }
-        
-        localStorage.setItem('calc_history', JSON.stringify(history));
-        updateHistoryDisplay();
-    }
-    
-    function clearHistory() {
-        if(confirm('Ви впевнені, що хочете очистити всю історію?')) {
-            localStorage.removeItem('calc_history');
-            history = [];
-            updateHistoryDisplay(); 
-        }
-    }
-
-    function updateHistoryDisplay() {
-        const historyList = document.getElementById('history-list');
-        if (!historyList) return; 
-
-        historyList.innerHTML = ''; 
-        const reversedHistory = [...history].reverse();
-
-        reversedHistory.forEach(entry => {
-            const listItem = document.createElement('li');
-            
-            // Можливість клікнути на запис для відновлення
-            listItem.onclick = () => {
-                display.value = entry.result;
-                isNewOperation = true;
-            };
-
-            // HTML генерується, використовуючи класи та змінні, що мають бути в CSS
-            listItem.innerHTML = `
-                <span class="history-expression">${entry.expression} =</span>
-                <span class="history-result">${entry.result}</span>
-                <span style="float: right; font-size: 0.7em; color: var(--tg-hint-color);">${entry.timestamp}</span>
-            `;
-            
-            historyList.appendChild(listItem);
-        });
-        
-        if (history.length === 0) {
-            historyList.innerHTML = '<li style="color: var(--tg-hint-color);">Історія порожня.</li>';
-        }
-    }
-
-
-    // ---------------------------------------------
-    // CALCULATOR CORE LOGIC (МОДИФІКАЦІЯ ДЛЯ ЗБЕРЕЖЕННЯ)
-    // ---------------------------------------------
-
-    function appendToDisplay(value) {
-        if (value === '←') {
-            display.value = display.value.slice(0, -1) || '0';
-            isNewOperation = false;
-            return;
+            newEntry = false;
         }
 
-        const isOperator = ['+', '-', '×', '÷', '(', ')', '.'].includes(value);
+        function calculateResult() {
+            let expression = display.value;
+            let result;
 
-        if (isNewOperation && !isOperator && display.value !== 'Error') {
-            display.value = value;
-            isNewOperation = false;
-        } else if (display.value === '0' && !isOperator) {
-            display.value = value;
-            isNewOperation = false;
-        } else {
-            display.value += value;
-            isNewOperation = false;
-        }
-    }
+            // 1. Заміна символів для коректного JS обчислення
+            expression = expression.replace(/×/g, '*')
+                                   .replace(/÷/g, '/')
+                                   .replace(/\^/g, '**');
 
-    function clearDisplay() {
-        display.value = '0';
-        isNewOperation = true;
-    }
+            // 2. Обробка тригонометричних функцій та кореня (sin, cos, tan, log, sqrt)
 
-    function calculateResult() {
-        const expressionToEvaluate = display.value.replace('×', '*').replace('÷', '/');
-        
-        try {
-            let result = eval(expressionToEvaluate);
-            
-            if (result === undefined || result === null || isNaN(result) || !isFinite(result)) {
-                display.value = 'Error';
-            } else {
-                // ВИКЛИК ЗБЕРЕЖЕННЯ ІСТОРІЇ
-                saveHistory(expressionToEvaluate.replace('*', '×').replace('/', '÷'), result); 
-                
+            // sqrt(x) -> Math.sqrt(x)
+            expression = expression.replace(/sqrt\(([^)]+)\)/g, (match, p1) => `Math.sqrt(${p1})`);
+
+            // log(x) -> Math.log10(x) (використовуємо log10 як найпоширеніший)
+            expression = expression.replace(/log\(([^)]+)\)/g, (match, p1) => `Math.log10(${p1})`);
+
+            // pow(x) -> Math.pow(x)
+            expression = expression.replace(/pow\(([^)]+)\)/g, (match, p1) => {
+                // p1 - це вміст дужок, наприклад "2,3"
+                return `Math.pow(${p1})`;
+            });
+
+            // π -> Math.PI
+            expression = expression.replace(/π/g, 'Math.PI');
+
+            // 3. Обробка тригонометричних функцій з урахуванням режиму (GRAD/RAD)
+            const trigFunctions = ['sin', 'cos', 'tan'];
+
+            trigFunctions.forEach(func => {
+                // Регулярний вираз для пошуку sin(VALUE), cos(VALUE), tan(VALUE)
+                const regex = new RegExp(`${func}\\(([^)]+)\\)`, 'g');
+
+                expression = expression.replace(regex, (match, value) => {
+                    // Якщо режим - Градуси, конвертуємо значення
+                    const adjustedValue = isDegrees ? `degToRad(${value})` : value;
+                    return `Math.${func}(${adjustedValue})`;
+                });
+            });
+
+
+            try {
+                // Виконання обчислення. Увага: eval - небезпечний, але простий для калькулятора.
+                result = eval(expression);
+
+                // Обмеження до 8 знаків після коми
+                if (typeof result === 'number' && !Number.isInteger(result)) {
+                    result = parseFloat(result.toFixed(8));
+                }
+
                 display.value = result;
-                isNewOperation = true;
+                newEntry = true;
+
+            } catch (e) {
+                display.value = 'Помилка';
+                if (window.Telegram.WebApp) {
+                    window.Telegram.WebApp.showAlert(`Некоректний вираз: ${expression}`);
+                }
+                newEntry = true;
             }
-        } catch (e) {
-            display.value = 'Error';
         }
-    }
 
-    // ---------------------------------------------
-    // INITIALIZATION
-    // ---------------------------------------------
+        // ===============================================
+        // 4. Ініціалізація Telegram Mini App SDK та Адаптація теми
+        // ===============================================
+        function initializeTelegramMiniApp() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                const WebApp = window.Telegram.WebApp;
 
-    function initApp() {
-        if (window.Telegram && window.Telegram.WebApp) {
-            applyTelegramTheme(); 
-            loadHistory(); // ЗАВАНТАЖУЄМО ІСТОРІЮ
-        } else {
-            setTimeout(initApp, 100); 
+                WebApp.ready();
+                WebApp.expand();
+
+                WebApp.MainButton.setText("ЗАКРИТИ").show();
+                WebApp.MainButton.onClick(() => { WebApp.close(); });
+
+                // Адаптація теми під Telegram (MD3-style color mapping)
+                const theme = WebApp.themeParams;
+                if (theme) {
+                    const bgColor = theme.bg_color || '#ffffff';
+                    const secondaryBgColor = theme.secondary_bg_color || '#f4f4f4';
+
+                    const textColor = theme.text_color || '#000000';
+                    const hintColor = theme.hint_color || '#999999';
+                    const buttonColor = theme.button_color || '#5195e4'; // Primary Accent
+
+                    document.body.style.color = textColor;
+
+                    const container = document.querySelector('.calculator-container');
+                    container.style.boxShadow = `0 8px 24px ${hintColor}40`;
+
+                    // Адаптація кольору фону контейнера
+                    const containerBg = WebApp.colorScheme === 'dark' ?
+                                        `${secondaryBgColor}E0` :
+                                        `${secondaryBgColor}F2`;
+                    container.style.backgroundColor = containerBg;
+
+                    // Адаптація кнопок
+                    document.documentElement.style.setProperty('--tg-theme-button-color', buttonColor);
+                    document.documentElement.style.setProperty('--tg-theme-button-text-color', theme.button_text_color || '#ffffff');
+                    document.documentElement.style.setProperty('--tg-theme-bg-color', bgColor);
+                    document.documentElement.style.setProperty('--tg-theme-secondary-bg-color', secondaryBgColor);
+                    document.documentElement.style.setProperty('--tg-theme-text-color', textColor);
+                    document.documentElement.style.setProperty('--tg-theme-hint-color', hintColor);
+
+
+                    WebApp.onEvent('themeChanged', initializeTelegramMiniApp);
+                }
+            } else {
+                console.log("Запущено як звичайна веб-сторінка.");
+            }
         }
-    }
-
-    initApp(); 
-</script>
-
+        document.addEventListener('DOMContentLoaded', initializeTelegramMiniApp);
+    </script>
 </body>
 </html>
+
