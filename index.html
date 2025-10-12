@@ -2,25 +2,40 @@
 <html>
 <head>
     <title>Calculator</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
     <style>
-        /* Основні стилі */
+        /* CSS-змінні для теми. Значення за замовчуванням (fallback) - світла тема. 
+           JavaScript перевизначить ці змінні з кольорами Telegram. */
+        :root {
+            --tg-bg-color: #f4f4f4;
+            --tg-text-color: #000000;
+            --tg-hint-color: #999999;
+            --tg-button-color: #007aff; /* Синій для акценту */
+            --tg-button-text-color: #ffffff;
+            --tg-secondary-bg-color: #ffffff; /* Для контейнера калькулятора/історії */
+        }
+
+        /* Стилі калькулятора використовують CSS-змінні Telegram */
         body {
             font-family: Arial, sans-serif;
             display: flex;
-            flex-direction: column; /* Змінюємо напрямок, щоб елементи були вертикально */
+            flex-direction: column;
             justify-content: center;
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background-color: #f4f4f4;
+            background-color: var(--tg-bg-color); /* Фон береться з Telegram */
+            color: var(--tg-text-color);
         }
-        .calculator {
-            border: 1px solid #ccc;
+        .calculator, #history-container {
+            border: 1px solid var(--tg-hint-color); /* Легка рамка */
             border-radius: 5px;
             padding: 20px;
-            background-color: #fff;
+            background-color: var(--tg-secondary-bg-color); /* Фон калькулятора/історії */
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            width: 300px; /* Фіксована ширина для кращого вигляду */
+            width: 300px;
+            box-sizing: border-box;
         }
         #display {
             width: 100%;
@@ -30,8 +45,10 @@
             margin-bottom: 10px;
             padding: 5px;
             box-sizing: border-box;
-            border: 1px solid #ddd;
+            border: 1px solid var(--tg-hint-color);
             border-radius: 3px;
+            background-color: var(--tg-secondary-bg-color);
+            color: var(--tg-text-color);
         }
         .buttons {
             display: grid;
@@ -44,44 +61,30 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            background-color: #e0e0e0;
+            background-color: var(--tg-bg-color); /* Світліший колір кнопки */
+            color: var(--tg-text-color);
         }
         .btn:hover {
-            background-color: #d0d0d0;
+            opacity: 0.8;
         }
         .operator {
-            background-color: #ff9500;
-            color: white;
-        }
-        .operator:hover {
-            background-color: #e08500;
+            background-color: var(--tg-button-color); /* Колір акценту */
+            color: var(--tg-button-text-color);
         }
         .equals {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .equals:hover {
-            background-color: #3e8e41;
+            background-color: var(--tg-button-color);
+            color: var(--tg-button-text-color);
         }
         .clear {
-            background-color: #ff3b30;
-            color: white;
+            background-color: var(--tg-hint-color); /* Колір для очищення */
+            color: var(--tg-button-text-color);
         }
-        .clear:hover {
-            background-color: #e02b20;
-        }
+        
         /* Стилі для історії */
         #history-container {
             margin-top: 20px;
-            width: 300px; 
-            text-align: left;
-            max-height: 200px; /* Обмеження висоти, щоб скролити */
-            overflow-y: auto; /* Дозволити скрол, якщо записів багато */
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            padding: 10px;
-            background-color: #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            max-height: 200px; 
+            overflow-y: auto; 
         }
         #history-list {
             list-style: none;
@@ -90,21 +93,22 @@
         }
         #history-list li {
             padding: 5px 0;
-            border-bottom: 1px dotted #eee;
-            cursor: pointer; /* Для можливості клікати на запис */
+            border-bottom: 1px dotted var(--tg-hint-color); 
+            cursor: pointer; 
         }
         #history-list li:last-child {
             border-bottom: none;
         }
         #history-list li:hover {
-            background-color: #f9f9f9;
+            background-color: rgba(var(--tg-text-color-rgb, 0,0,0), 0.1);
         }
         .history-expression {
-            color: #555;
+            color: var(--tg-hint-color);
             font-size: 0.9em;
         }
         .history-result {
             font-weight: bold;
+            color: var(--tg-text-color);
         }
     </style>
 </head>
@@ -141,7 +145,7 @@
 </div>
 
 <div id="history-container">
-    <h4>Остання історія (до 10 записів): <button style="float: right;" onclick="clearHistory()">Очистити</button></h4>
+    <h4>Остання історія (до 10 записів): <button style="float: right; border: none; background: transparent; color: var(--tg-button-color); cursor: pointer;" onclick="clearHistory()">Очистити</button></h4>
     <ul id="history-list">
         </ul>
 </div>
@@ -154,6 +158,33 @@
     let isNewOperation = true;
 
     // ---------------------------------------------
+    // TELEGRAM THEME INTEGRATION (NEW)
+    // ---------------------------------------------
+    function applyTelegramTheme() {
+        if (window.Telegram && window.Telegram.WebApp) {
+            const tg = window.Telegram.WebApp;
+            const theme = tg.themeParams;
+            const root = document.documentElement; // Застосовуємо до root (або body)
+            
+            // Застосовуємо всі кольори, надані Telegram, як CSS-змінні
+            for (const key in theme) {
+                if (theme.hasOwnProperty(key)) {
+                    // key: bg_color -> --tg-bg-color
+                    const cssVarName = '--tg-' + key.replace(/([A-Z])/g, '-$1').toLowerCase();
+                    root.style.setProperty(cssVarName, theme[key]);
+                }
+            }
+            
+            // Додатково: Підписка на зміну теми (якщо користувач переключить світлу/темну)
+            tg.onEvent('themeChanged', applyTelegramTheme);
+
+            // Виклик методу для розширення Mini App на повну висоту
+            tg.expand();
+        }
+    }
+
+
+    // ---------------------------------------------
     // LOCAL STORAGE & HISTORY DISPLAY
     // ---------------------------------------------
 
@@ -163,18 +194,16 @@
             try {
                 history = JSON.parse(savedHistory);
                 if (history.length > 0) {
-                    // Відновлюємо останній результат
                     display.value = history[history.length - 1].result;
                     isNewOperation = true; 
                 }
-                updateHistoryDisplay(); // <--- ОНОВЛЕННЯ ГІ ПІСЛЯ ЗАВАНТАЖЕННЯ
+                updateHistoryDisplay(); 
             } catch (e) {
-                console.error('Помилка завантаження історії:', e);
                 history = [];
                 clearDisplay();
             }
         } else {
-            updateHistoryDisplay(); // Очистити відображення, якщо localStorage порожній
+            updateHistoryDisplay();
         }
     }
 
@@ -182,68 +211,57 @@
         history.push({ 
             expression: expression,
             result: result.toString(),
-            timestamp: new Date().toLocaleTimeString('uk-UA') // Зберігаємо час
+            timestamp: new Date().toLocaleTimeString('uk-UA') 
         });
         
-        // Обмежуємо розмір історії
         if (history.length > MAX_HISTORY_SIZE) {
             history = history.slice(history.length - MAX_HISTORY_SIZE);
         }
         
         localStorage.setItem('calc_history', JSON.stringify(history));
-        updateHistoryDisplay(); // <--- ОНОВЛЕННЯ ГІ ПІСЛЯ ЗБЕРЕЖЕННЯ
+        updateHistoryDisplay();
     }
     
-    // Нова функція для очищення історії (викликається кнопкою)
     function clearHistory() {
         if(confirm('Ви впевнені, що хочете очистити всю історію?')) {
             localStorage.removeItem('calc_history');
             history = [];
-            updateHistoryDisplay(); // Оновлюємо ГІ
+            updateHistoryDisplay(); 
         }
     }
 
-
-    /**
-     * Генерує HTML-список і відображає історію.
-     */
     function updateHistoryDisplay() {
         const historyList = document.getElementById('history-list');
         if (!historyList) return; 
 
-        historyList.innerHTML = ''; // Очищуємо старі записи
+        historyList.innerHTML = ''; 
 
-        // Відображаємо історію у зворотньому порядку (новіші зверху)
         const reversedHistory = [...history].reverse();
 
         reversedHistory.forEach(entry => {
             const listItem = document.createElement('li');
             
-            // Додаємо обробник кліку для відновлення результату на дисплеї
             listItem.onclick = () => {
                 display.value = entry.result;
                 isNewOperation = true;
             };
 
-            // HTML-розмітка для відображення в ГІ
             listItem.innerHTML = `
                 <span class="history-expression">${entry.expression} =</span>
                 <span class="history-result">${entry.result}</span>
-                <span style="float: right; font-size: 0.7em; color: #aaa;">${entry.timestamp}</span>
+                <span style="float: right; font-size: 0.7em; color: var(--tg-hint-color);">${entry.timestamp}</span>
             `;
             
             historyList.appendChild(listItem);
         });
         
-        // Якщо історія порожня
         if (history.length === 0) {
-            historyList.innerHTML = '<li style="color: #888;">Історія порожня.</li>';
+            historyList.innerHTML = '<li style="color: var(--tg-hint-color);">Історія порожня.</li>';
         }
     }
 
-
     // ---------------------------------------------
-    // CALCULATOR CORE LOGIC
+    // CALCULATOR CORE LOGIC (UNCHANGED)
     // ---------------------------------------------
 
     function appendToDisplay(value) {
@@ -281,7 +299,6 @@
             if (result === undefined || result === null || isNaN(result) || !isFinite(result)) {
                 display.value = 'Error';
             } else {
-                // Зберігаємо вираз і результат (для відображення в ГІ)
                 saveHistory(expressionToEvaluate.replace('*', '×').replace('/', '÷'), result); 
                 
                 display.value = result;
@@ -296,6 +313,8 @@
     // INITIALIZATION
     // ---------------------------------------------
 
+    // 🚩 Запускаємо інтеграцію теми та завантаження даних
+    applyTelegramTheme();
     loadHistory(); 
 </script>
 
