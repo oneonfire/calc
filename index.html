@@ -27,11 +27,11 @@
             margin: 0;
             background-color: var(--tg-bg-color); 
             color: var(--tg-text-color);
-            transition: background-color 0.3s; /* Плавний перехід теми */
+            transition: background-color 0.3s;
         }
         
         .calculator, #history-container {
-            /* Використовуємо secondary_bg_color для "внутрішніх" контейнерів */
+            /* secondary_bg_color - темно-сірий у темній темі. Це фон контейнерів. */
             background-color: var(--tg-secondary-bg-color); 
             border: 1px solid var(--tg-hint-color); 
             border-radius: 5px;
@@ -74,19 +74,26 @@
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            background-color: var(--tg-bg-color); 
-            color: var(--tg-text-color);
             transition: background-color 0.3s;
         }
         .btn:active {
             opacity: 0.7;
         }
+        
+        /* Звичайні кнопки (1,2,3,4...) використовують bg_color (для контрасту) */
+        .btn:not(.operator):not(.equals):not(.clear) {
+            background-color: var(--tg-bg-color); 
+            color: var(--tg-text-color);
+        }
+        
+        /* Оператори та "=" використовують колір акценту */
         .operator, .equals {
-            background-color: var(--tg-button-color); /* Колір акценту */
+            background-color: var(--tg-button-color); 
             color: var(--tg-button-text-color);
         }
+        /* Кнопка очищення (C) використовує колір підказки */
         .clear {
-            background-color: var(--tg-hint-color); /* Колір для очищення */
+            background-color: var(--tg-hint-color); 
             color: var(--tg-button-text-color);
         }
         
@@ -110,6 +117,7 @@
             border-bottom: none;
         }
         #history-list li:hover {
+            /* hover-ефект, який працює з будь-яким кольором теми */
             background-color: rgba(var(--tg-text-color-rgb, 0,0,0), 0.1); 
         }
         .history-expression {
@@ -358,7 +366,6 @@
             applyTelegramTheme(); 
             loadHistory(); 
         } else {
-            // Якщо SDK не готовий, спробуємо ініціалізувати через короткий час
             setTimeout(initApp, 100); 
         }
     }
