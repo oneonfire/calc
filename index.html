@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MD3 Науковий Калькулятор</title>
-    <!-- Підключення Telegram Web App SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         /* MD3 Style Reset and Base */
@@ -75,8 +74,8 @@
 
         .buttons {
             display: grid;
-            /* 5 колонок для наукового режиму */
-            grid-template-columns: repeat(5, 1fr);
+            /* ЗМІНЕНО: 6 колонок для наукового режиму */
+            grid-template-columns: repeat(6, 1fr);
             gap: 8px;
         }
 
@@ -96,10 +95,13 @@
         }
 
         /* Стилі для різних типів кнопок */
-        /* Control/Clear buttons */
+        
+        /* Control/Clear buttons - ЗМІНЕНО КОЛІР */
         .control {
-            background-color: var(--tg-theme-hint-color, #ccc)30;
-            color: var(--tg-theme-text-color, #333);
+            /* Колір для C та DEL */
+            background-color: #ef4444; /* М'який червоний */
+            color: #ffffff;
+            font-weight: 600;
         }
 
         /* Scientific functions */
@@ -123,11 +125,11 @@
             font-weight: 600;
         }
 
-        /* Equal button - використовуємо span 3 в HTML */
+        /* Equal button - ЗМІНЕНО КОЛІР */
         .equal {
-            /* grid-column: span 2; - Прибрано з CSS, використовується inline-стиль для span 3 */
-            background-color: var(--tg-theme-button-color, #5195e4);
-            color: var(--tg-theme-button-text-color, #ffffff);
+            /* grid-column: span 3; - ЗАЛИШЕНО: для коректного вирівнювання */
+            background-color: #22c55e; /* Яскраво-зелений */
+            color: #ffffff;
             font-weight: 700;
             font-size: 1.5em;
         }
@@ -142,44 +144,38 @@
         </div>
 
         <div class="buttons">
-            <!-- Ряд 1: Тригонометрія та Контроль -->
             <button class="scientific" onclick="appendFunction('sin(')">sin</button>
             <button class="scientific" onclick="appendFunction('cos(')">cos</button>
             <button class="scientific" onclick="appendFunction('tan(')">tan</button>
             <button class="control" onclick="clearDisplay()">C</button>
             <button class="control" onclick="deleteLast()">DEL</button>
+            <button class="operator" onclick="appendPercentage()">%</button>
 
-            <!-- Ряд 2: log, √ та Числа 7, 8, 9 -->
             <button class="scientific" onclick="appendFunction('log(')">log</button>
             <button class="scientific" onclick="appendFunction('sqrt(')">√</button>
             <button class="number" onclick="appendValue('7')">7</button>
             <button class="number" onclick="appendValue('8')">8</button>
             <button class="number" onclick="appendValue('9')">9</button>
+            <button class="operator" onclick="appendValue('/')">÷</button>
 
-            <!-- Ряд 3: x^y, π та Числа 4, 5, 6 -->
             <button class="scientific" onclick="appendFunction('pow(')">x^y</button>
-            <button class="scientific" onclick="appendValue('Math.PI')">π</button>
+            <button class="scientific" onclick="appendValue(',')">,</button>
             <button class="number" onclick="appendValue('4')">4</button>
             <button class="number" onclick="appendValue('5')">5</button>
             <button class="number" onclick="appendValue('6')">6</button>
+            <button class="operator" onclick="appendValue('*')">×</button>
 
-            <!-- Ряд 4: Дужки та Числа 1, 2, 3 -->
             <button class="scientific" onclick="appendValue('(')">(</button>
             <button class="scientific" onclick="appendValue(')')">)</button>
             <button class="number" onclick="appendValue('1')">1</button>
             <button class="number" onclick="appendValue('2')">2</button>
             <button class="number" onclick="appendValue('3')">3</button>
+            <button class="operator" onclick="appendValue('-')">-</button>
 
-            <!-- Ряд 5: Числа 0, . та Ділення/Множення -->
             <button class="number" onclick="appendValue('0')" style="grid-column: span 2;">0</button>
             <button class="number" onclick="appendValue('.')">.</button>
-            <button class="operator" onclick="appendValue('/')">÷</button>
-            <button class="operator" onclick="appendValue('*')">×</button>
-
-            <!-- Ряд 6: Віднімання/Додавання та Обчислення -->
-            <button class="operator" onclick="appendValue('-')">-</button>
             <button class="operator" onclick="appendValue('+')">+</button>
-            <button class="equal" onclick="calculateResult()" style="grid-column: span 3;">=</button>
+            <button class="equal" onclick="calculateResult()" style="grid-column: span 2;">=</button>
         </div>
     </div>
     <script>
@@ -237,6 +233,19 @@
             newEntry = false;
         }
 
+        function appendPercentage() {
+            if (display.value === '0' || newEntry) {
+                if (display.value === '0' && !newEntry) {
+                    display.value = '0%';
+                } else if (!newEntry) {
+                    display.value += '%';
+                }
+            } else {
+                display.value += '%';
+            }
+            newEntry = false;
+        }
+
         function calculateResult() {
             let expression = display.value;
             let result;
@@ -246,8 +255,19 @@
                                    .replace(/÷/g, '/')
                                    .replace(/\^/g, '**');
 
-            // 2. Обробка тригонометричних функцій та кореня (sin, cos, tan, log, sqrt)
+            // 2. Обробка відсотків (%)
+            expression = expression.replace(/([+\-*/])\s*(\d+(\.\d*)?)%/g, (match, operator, number) => {
+                if (operator === '*' || operator === '/') {
+                    return `${operator}(${number}/100)`;
+                }
+                return `${operator}${number}/100`;
+            });
+            expression = expression.replace(/(\d+(\.\d*)?)%$/, (match, number) => {
+                 return `(${number}/100)`;
+            });
 
+
+            // 3. Обробка наукових функцій
             // sqrt(x) -> Math.sqrt(x)
             expression = expression.replace(/sqrt\(([^)]+)\)/g, (match, p1) => `Math.sqrt(${p1})`);
 
@@ -260,10 +280,7 @@
                 return `Math.pow(${p1})`;
             });
 
-            // π -> Math.PI
-            expression = expression.replace(/π/g, 'Math.PI');
-
-            // 3. Обробка тригонометричних функцій з урахуванням режиму (GRAD/RAD)
+            // 4. Обробка тригонометричних функцій з урахуванням режиму (GRAD/RAD)
             const trigFunctions = ['sin', 'cos', 'tan'];
 
             trigFunctions.forEach(func => {
@@ -300,7 +317,7 @@
         }
 
         // ===============================================
-        // 4. Ініціалізація Telegram Mini App SDK та Адаптація теми
+        // 5. Ініціалізація Telegram Mini App SDK та Адаптація теми
         // ===============================================
         function initializeTelegramMiniApp() {
             if (window.Telegram && window.Telegram.WebApp) {
@@ -334,6 +351,8 @@
                     container.style.backgroundColor = containerBg;
 
                     // Адаптація кнопок
+                    // Примітка: для кнопок .operator, .scientific, .number ми використовуємо змінні теми Telegram.
+                    // Для кнопок C, DEL та = (класи .control та .equal) ми використовуємо жорстко задані кольори CSS, як ви просили.
                     document.documentElement.style.setProperty('--tg-theme-button-color', buttonColor);
                     document.documentElement.style.setProperty('--tg-theme-button-text-color', theme.button_text_color || '#ffffff');
                     document.documentElement.style.setProperty('--tg-theme-bg-color', bgColor);
@@ -352,4 +371,3 @@
     </script>
 </body>
 </html>
-
